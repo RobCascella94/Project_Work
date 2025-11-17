@@ -43,6 +43,7 @@ class Utente(Base):
         return bcrypt.checkpw(pin_bytes, db_hash_bytes)
 
 
+
 class Lavoro(Base):
     __tablename__ = "lavori"
     id = Column(Integer, primary_key=True, autoincrement=True)
