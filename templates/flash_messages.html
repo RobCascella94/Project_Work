@@ -1,0 +1,29 @@
+<div class="flash-wrapper">
+    {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}" onclick="this.classList.add('closing')">
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+</div>
+
+<script>
+// --- CHIUSURA DOPO 7s ---
+document.querySelectorAll(".flash-message").forEach(msg => {
+    setTimeout(() => {
+        msg.classList.add("closing");
+    }, 7000); // 7 secondi
+});
+
+// --- CLICK-TO-CLOSE PER ESSERE PIù RAPIDI ---
+document.querySelectorAll(".flash-message").forEach(msg => {
+    msg.addEventListener("click", () => {
+        msg.classList.add("closing");
+    });
+});
+</script>

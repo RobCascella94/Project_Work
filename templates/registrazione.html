@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+    <title>Registrazione Nuovo Conto</title>
+</head>
+<body>
+    {% include 'flash_messages.html' %}
+    <div class="container-registrazione">
+        <div class="container-box">
+            <div class="titolo">Registrazione</div>
+
+            <form action="/registrazione" method="POST">
+                <div class="dettagli-utente">
+
+                    <div class="input-box">
+                        <span class="dettaglio">Nome</span>
+                        <input type="text" id="nome" name="nome" placeholder="Inserisci il tuo nome" required>
+                    </div>
+
+                    <div class="input-box">
+                        <span class="dettaglio">Cognome</span>
+                        <input type="text" id="cognome" name="cognome" placeholder="Inserisci il tuo cognome" required>
+                    </div>
+
+                    <div class="input-box">
+                        <span class="dettaglio">Codice Fiscale</span>
+                        <input type="text" id="codice_fiscale" name="codice_fiscale" placeholder="Inserisci il tuo CF" required>
+                    </div>
+
+                    <div class="input-box">
+                        <span class="dettaglio">Lavoro</span>
+                        <select name="lavoro" required>
+                            <option value="" disabled selected>Seleziona una professione</option>
+                            <option value="Medico">Medico</option>
+                            <option value="Studente">Studente</option>
+                            <option value="Libero professionista">Libero professionista</option>
+                            <option value="Disoccupato">Disoccupato</option>
+                        </select>
+                    </div>
+
+                    <div class="input-box">
+                        <span class="dettaglio">PIN</span>
+                        <input type="password" id="pin1" name="pin1" maxlength="6" placeholder="Inserisci PIN (6 cifre)" required>
+
+                        <div class="tooltipShow1"
+                             onclick="mostraPassword('imgpin1','pin1','tooltippin1')">
+
+                            <img src="/static/show-password.png" id="imgpin1" width="30px">
+                            <span class="tooltipShowText1" id="tooltippin1">Mostra PIN</span>
+                        </div>
+                    </div>
+
+                    <div class="input-box">
+                        <span class="dettaglio">Conferma PIN</span>
+                        <input type="password" id="pin2" name="pin2" maxlength="6" placeholder="Conferma PIN" required>
+
+                        <div class="tooltipShow2"
+                             onclick="mostraPassword('imgpin2','pin2','tooltippin2')">
+
+                            <img src="/static/show-password.png" id="imgpin2" width="30px">
+                            <span class="tooltipShowText2" id="tooltippin2">Mostra PIN</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-registra">
+                    <input type="submit" value="Registra">
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function mostraPassword(idImg, idInput, idTooltip) {
+            const img = document.getElementById(idImg);
+            const input = document.getElementById(idInput);
+            const tooltip = document.getElementById(idTooltip);
+
+            if (input.type === "password") {
+                input.type = "text";
+                img.src = "/static/hide-password.png";
+                tooltip.textContent = "Nascondi PIN";
+            } else {
+                input.type = "password";
+                img.src = "/static/show-password.png";
+                tooltip.textContent = "Mostra PIN";
+            }
+        }
+    </script>
+</body>
+</html>

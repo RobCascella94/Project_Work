@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NomeBanca - Login</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    {% include 'flash_messages.html' %}
+    <div class="login-form">
+        <div class="login-card">
+            <h4>Benvenuto in <strong>NomeBanca</strong></h4>
+
+            <form action="{{ url_for('login') }}" method="POST">
+                <div class="form-row">
+                    <input type="text" id="codice_titolare" name="codice_titolare" placeholder=" " required> 
+                    <label for="codice-titolare">Codice Titolare</label>
+                </div>
+
+                <div class="form-row">
+                    <input type="password" id="pin" inputmode="numeric" maxlength="6" name="pin" placeholder=" " required>
+                    <label for="pin">Pin </label>
+                    <div class="tooltipShow" onclick="mostraPassword()"><img src="/static/show-password.png" id="imgpass" width="30px" />
+                    <span class="tooltipShowText" id="tooltiptext">Mostra Password</span></div>
+                </div>
+                
+                <button type="submit" class="buttonLogin">ACCEDI</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        function mostraPassword() {
+            var img = document.getElementById('imgpass');
+            var x = document.getElementById('pin');
+            var tooltip = document.getElementById('tooltiptext');
+
+            if (x.type === "password") {
+                x.type = "text";
+                img.src = '/static/hide-password.png'; 
+                tooltip.textContent = "Nascondi Password";
+            } else {
+                x.type = "password";
+                img.src = '/static/show-password.png';
+                tooltip.textContent = "Mostra Password";
+            }
+        }  
+    </script>
+    <script>
+        const pinDaPassare = document.getElementById('pin');
+
+        pinDaPassare.addEventListener('keydown', (e) => {
+        // Tasti di controllo che si possono usare: Backspace, Tab, frecce, Ctrl/Cmd, Home/End
+        const controlKeys = ['Backspace','Tab','ArrowLeft','ArrowRight','Delete','Home','End'];
+        if (controlKeys.includes(e.key) || e.metaKey || e.ctrlKey) return; //metaKey e ctrlKey sono per permettere di usare i comandi mac e Ctrl su win/linux
+        // Input solo cifre 0-9
+        if (!/^[0-9]$/.test(e.key)) e.preventDefault();
+        });
+
+        pinDaPassare.addEventListener('paste', (e) => { //'paste' permette di fare il copia/incolla nella casella
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData('text');
+        const digits = pasted.replace(/\D+/g, '');
+        
+        const max = pinDaPassare.maxLength > 0 ? pinDaPassare.maxLength : Infinity; // Inserimento solo fino al maxlength rimanente
+        const remain = max - pinDaPassare.value.length; //conta il posti rimanenti di inserimento
+        pinDaPassare.setRangeText(digits.slice(0, remain), pinDaPassare.selectionStart, pinDaPassare.selectionEnd, 'end'); 
+        });
+
+        pinDaPassare.addEventListener('input', () => {
+        // Safety net: rimuovi eventuali non numeri residui
+        pinDaPassare.value = pinDaPassare.value.replace(/\D+/g, '');
+        });
+    </script>
+
+
+
+
+</body>
+</html>

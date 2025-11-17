@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NomeBanca - Pagina Privata</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    {% include 'flash_messages.html' %}
+    <nav class="navbar">
+        <div class="logo">
+            <h3>Benvenuto, {{ utente.nome }} {{ utente.cognome }}!</h3>
+        </div>
+        <form action="/logout" method="POST">
+            <button type="submit" class="buttonLogout">
+                <img src="/static/logout32.png" alt="Logout">
+            </button>
+        </form>
+    </nav>
+
+    <section class="user-info">
+        <h4>📋 Informazioni Utente</h4>
+        <p><strong>Codice Titolare:</strong> {{ utente.codice_titolare }}</p>
+        {% if utente.lavoro %}
+            <p><strong>Lavoro:</strong> {{ utente.lavoro.nome_lavoro }}</p>
+            <p><strong>Stipendio medio:</strong> €{{ "%.2f"|format(utente.lavoro.stipendio_medio) }}</p>
+        {% else %}
+            <p><strong>Lavoro:</strong> Disoccupato</p>
+        {% endif %}
+    </section>
+
+    <section class="conti" style="text-align:center;">
+    <h4>💳 I tuoi conti</h4>
+
+    <div class="carte-container centered-cards">
+        {% for conto in utente.conti %}
+        <div class="carta-conto">
+            <div class="carta-top">
+                <span class="carta-logo">NomeBanca</span>
+                <button class="toggle-iban" onclick="toggleIBAN(this)">👁️</button>
+            </div>
+
+            <div class="iban-section">
+                {% set iban = conto.iban %}
+                {% set iban_visibile = iban[:2] + " " + "*" * (iban|length - 4) + " " + iban[-2:] %}
+                <p class="iban-masked">{{ iban_visibile }}</p>
+                <p class="iban-full" style="display:none;">{{ iban }}</p>
+            </div>
+
+            <div class="carta-footer">
+                <p class="card-holder">{{ utente.nome }} {{ utente.cognome }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    </section>
+
+
+    <section class="transazioni">
+        <h4>📅 Ultimi movimenti</h4>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Data</th>
+                <th>Importo</th>
+                <th>Conto (IBAN)</th>
+            </tr>
+            {% for t in transazioni %}
+            <tr>
+                <td>{{ t.id }}</td>
+                <td>{{ t.data }}</td>
+                <td>{{ "%.2f"|format(t.importo) }}</td>
+                <td>{{ t.iban }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </section>
+<script>
+    function toggleIBAN(button) {
+        const card = button.closest(".carta-conto");
+        const masked = card.querySelector(".iban-masked");
+        const full = card.querySelector(".iban-full");
+
+        if (full.style.display === "none") {
+            full.style.display = "block";
+            masked.style.display = "none";
+            button.textContent = "🙈";
+        } else {
+            full.style.display = "none";
+            masked.style.display = "block";
+            button.textContent = "👁️";
+        }
+    }
+</script>
+
+<script>
+    window.addEventListener("beforeunload", () => {
+        navigator.sendBeacon("/logout_auto");
+    });
+</script>
+
+</body>
+</html>

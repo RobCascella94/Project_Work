@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/static/style.css">
+
+    <title>Nome Banca</title>
+  </head>
+  <body>
+    {% include 'flash_messages.html' %}
+    <!-- header-->
+     <header>
+        <nav class="navbar">
+            <div class="logo">
+                <img src="" alt="Logo"> 
+                <!-- Aggiungi il tuo logo es: /static/img/logo.png in src-->
+                <h1>Nome Banca</h1>
+            </div>
+            <div class="pulsante-barra">
+                <a href="/login" class="login">ACCEDI</a>
+                <a href="/registrazione" class="register">NUOVO CONTO</a>
+            </div>
+     </header>
+
+
+    <!-- Parte centrale-->
+
+    <main>
+        <section class="home-section">
+            <div class="container">
+                <div class="content">
+                    <h1 class="title">Benvenuti in Nome Banca</h1>
+                    <p class="description">Crea un nuovo conto oppure accedi per iniziare a usare i servizi.</p>
+
+                    <div class="buttons">
+                        <a href="/login" class="accedi">ACCEDI</a>
+                        <a href="/registrazione" class="crea">NUOVO CONTO</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+    </body>
+</html>
