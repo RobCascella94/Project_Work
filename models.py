@@ -20,20 +20,22 @@ class Utente(Base):
     lavoro = relationship("Lavoro", back_populates="utenti") 
     conti = relationship("Conto", back_populates="utente", cascade="all, delete-orphan") 
 
-    def __init__(self, nome, cognome, codice_fiscale, lavoro_id):
+    def __init__(self, nome, cognome, codice_fiscale, lavoro_id, session):
         self.nome = nome
         self.cognome = cognome
         self.codice_fiscale = codice_fiscale
-        self.codice_titolare = self.genera_codice_titolare()
+        self.codice_titolare = self.genera_codice_titolare(session)
         self.lavoro_id = lavoro_id
         
-    def genera_codice_titolare(self):
-        while True:
+    def genera_codice_titolare(self, session):
+        '''while True:
             numero = random.randint(1, 999999)
             codice = f"CT{numero:06d}"
 
-            if not self.query.filter_by(codice_titolare=codice).first():
+            if not session.query(Utente).filter_by(codice_titolare=codice).first():
                 self.codice_titolare = codice
+                break'''
+        self.codice_titolare="stringa test"
                 
 
     def crea_pin(self, pin):

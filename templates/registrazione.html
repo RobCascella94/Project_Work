@@ -17,37 +17,36 @@
 
                     <div class="input-box">
                         <span class="dettaglio">Nome</span>
-                        <input type="text" id="nome" name="nome" placeholder="Inserisci il tuo nome" required>
+                        <input type="text" id="nome" name="nome" placeholder="Inserisci il tuo nome" class="required" required>
                     </div>
 
                     <div class="input-box">
                         <span class="dettaglio">Cognome</span>
-                        <input type="text" id="cognome" name="cognome" placeholder="Inserisci il tuo cognome" required>
+                        <input type="text" id="cognome" name="cognome" placeholder="Inserisci il tuo cognome" class="required" required>
                     </div>
 
                     <div class="input-box">
                         <span class="dettaglio">Codice Fiscale</span>
-                        <input type="text" id="codice_fiscale" name="codice_fiscale" placeholder="Inserisci il tuo CF" required>
+                        <input type="text" id="codice_fiscale" name="codice_fiscale" placeholder="Inserisci il tuo CF" class="required" required>
                     </div>
 
                     <div class="input-box">
                         <span class="dettaglio">Lavoro</span>
-                        <select name="lavoro" required>
-                            <option value="" disabled selected>Seleziona una professione</option>
-                            <option value="Medico">Medico</option>
-                            <option value="Studente">Studente</option>
-                            <option value="Libero professionista">Libero professionista</option>
-                            <option value="Disoccupato">Disoccupato</option>
+                        <select name="lavoro" id="lavoro" class="form-select required" required>
+                            <option value="">-- Seleziona --</option>
+
+                            {% for lavoro in lavori %}
+                                <option value="{{ lavoro.id }}">{{ lavoro.nome_lavoro }}</option>
+                            {% endfor %}
                         </select>
                     </div>
 
                     <div class="input-box">
                         <span class="dettaglio">PIN</span>
-                        <input type="password" id="pin1" name="pin1" maxlength="6" placeholder="Inserisci PIN (6 cifre)" required>
+                        <input type="password" id="pin1" name="pin1" maxlength="6" placeholder="Inserisci PIN (6 cifre)" class="required" required>
 
                         <div class="tooltipShow1"
                              onclick="mostraPassword('imgpin1','pin1','tooltippin1')">
-
                             <img src="/static/show-password.png" id="imgpin1" width="30px">
                             <span class="tooltipShowText1" id="tooltippin1">Mostra PIN</span>
                         </div>
@@ -55,19 +54,19 @@
 
                     <div class="input-box">
                         <span class="dettaglio">Conferma PIN</span>
-                        <input type="password" id="pin2" name="pin2" maxlength="6" placeholder="Conferma PIN" required>
+                        <input type="password" id="pin2" name="pin2" maxlength="6" placeholder="Conferma PIN" class="required" required>
 
                         <div class="tooltipShow2"
                              onclick="mostraPassword('imgpin2','pin2','tooltippin2')">
-
                             <img src="/static/show-password.png" id="imgpin2" width="30px">
                             <span class="tooltipShowText2" id="tooltippin2">Mostra PIN</span>
                         </div>
+                        <p id="pinMessage"></p>
                     </div>
                 </div>
 
                 <div class="button-registra">
-                    <input type="submit" value="Registra">
+                    <button type="submit" id="submitBtn" disabled>Registra</button>
                 </div>
             </form>
         </div>
@@ -90,5 +89,44 @@
             }
         }
     </script>
+
+    <script>
+        const requiredFields = document.querySelectorAll(".required");
+        const pin1 = document.getElementById("pin1");
+        const pin2 = document.getElementById("pin2");
+        const msg = document.getElementById("pinMessage");
+        const btn = document.getElementById("submitBtn");
+
+        function validateForm() {
+            let allFilled = true;
+            requiredFields.forEach(field => {
+                if (field.value.trim() === "") {
+                    allFilled = false;
+                }
+            });
+
+            let pinValid = false;
+            if (pin1.value.length === 6 && pin2.value.length === 6) {
+                if (pin1.value === pin2.value) {
+                    msg.textContent = "✔️ PIN corrispondenti";
+                    msg.style.color = "green";
+                    pinValid = true;
+                } else {
+                    msg.textContent = "❌ I PIN non corrispondono";
+                    msg.style.color = "red";        
+                }
+            } else {
+                msg.textContent = "";
+            }
+
+            // Attivo / disattivo pulsante
+            btn.disabled = !(allFilled && pinValid);
+        }
+
+        requiredFields.forEach(field => {
+            field.addEventListener("input", validateForm);
+        });
+    </script>
+
 </body>
 </html>

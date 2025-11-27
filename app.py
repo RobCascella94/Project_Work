@@ -80,13 +80,14 @@ def registrazione():
             nome = nome_inserito,
             cognome = cognome_inserito,
             codice_fiscale = codice_fiscale_inserito,
-            lavoro_id = lavoro_inserito
+            lavoro_id = lavoro_inserito,
+            session=db
         )
         nuovo_utente.crea_pin(pin1_inserito)
         db.add(nuovo_utente)
         db.flush()
 
-        crea_nuovo_conto_utente(db, nuovo_utente)
+        #crea_nuovo_conto_utente(db, nuovo_utente)
         db.commit()
         flash(f"Registrazione avvenuta con successo! Il suo codice titolare è {nuovo_utente.codice_titolare}. Usalo per effettuare il login.", "success")
         return redirect(url_for('login'))

@@ -1,104 +1,117 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NomeBanca - Pagina Privata</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
     {% include 'flash_messages.html' %}
-    <nav class="navbar">
-        <div class="logo">
-            <h3>Benvenuto, {{ utente.nome }} {{ utente.cognome }}!</h3>
-        </div>
-        <form action="/logout" method="POST">
-            <button type="submit" class="buttonLogout">
-                <img src="/static/logout32.png" alt="Logout">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Benvenuto, {{ utente.nome }} {{ utente.cognome }}!</h3>
+        <form action="/logout" method="POST" class="m-0">
+            <button type="submit" class="btn btn-outline-danger p-2">
+                <img src="/static/logout32.png" alt="Logout" height="24">
             </button>
         </form>
-    </nav>
+    </div>
 
-    <section class="user-info">
-        <h4>📋 Informazioni Utente</h4>
-        <p><strong>Codice Titolare:</strong> {{ utente.codice_titolare }}</p>
-        {% if utente.lavoro %}
-            <p><strong>Lavoro:</strong> {{ utente.lavoro.nome_lavoro }}</p>
-            <p><strong>Stipendio medio:</strong> €{{ "%.2f"|format(utente.lavoro.stipendio_medio) }}</p>
-        {% else %}
-            <p><strong>Lavoro:</strong> Disoccupato</p>
-        {% endif %}
-    </section>
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            📋 Informazioni Utente
+        </div>
+        <div class="card-body">
+            <p><strong>Codice Titolare:</strong> {{ utente.codice_titolare }}</p>
+            {% if utente.lavoro %}
+                <p><strong>Lavoro:</strong> {{ utente.lavoro.nome_lavoro }}</p>
+                <p><strong>Stipendio:</strong> €{{ "%.2f"|format(utente.lavoro.stipendio_mensile) }}</p>
+            {% else %}
+                <p><strong>Lavoro:</strong> Disoccupato</p>
+            {% endif %}
+        </div>
+    </div>
 
-    <section class="conti" style="text-align:center;">
-    <h4>💳 I tuoi conti</h4>
-
-    <div class="carte-container centered-cards">
+    <h4 class="mb-3">💳 I tuoi conti</h4>
+    <div class="row g-4 mb-4">
         {% for conto in utente.conti %}
-        <div class="carta-conto">
-            <div class="carta-top">
-                <span class="carta-logo">NomeBanca</span>
-                <button class="toggle-iban" onclick="toggleIBAN(this)">👁️</button>
-            </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold fs-5">NomeBanca</span>
 
-            <div class="iban-section">
-                {% set iban = conto.iban %}
-                {% set iban_visibile = iban[:2] + " " + "*" * (iban|length - 4) + " " + iban[-2:] %}
-                <p class="iban-masked">{{ iban_visibile }}</p>
-                <p class="iban-full" style="display:none;">{{ iban }}</p>
-            </div>
+                        <!-- Bottone mostra/nascondi saldo -->
+                        <button class="btn btn-sm btn-outline-secondary" onclick="toggleSaldo(this)">👁️</button>
+                    </div>
 
-            <div class="carta-footer">
-                <p class="card-holder">{{ utente.nome }} {{ utente.cognome }}</p>
+                    <!-- IBAN CHIARO -->
+                    <p class="text-muted mb-1"><strong>IBAN:</strong> {{ conto.iban }}</p>
+
+                    <!-- SALDO NASCOSTO -->
+                    <p class="saldo-masked text-muted">
+                        <strong>Saldo:</strong> € ****** 
+                    </p>
+                    <p class="saldo-full text-muted" style="display:none;">
+                        <strong>Saldo:</strong> € {{ "%.2f"|format(conto.saldo) }}
+                    </p>
+                </div>
+
+                <div class="card-footer text-center small text-muted">
+                    {{ utente.nome }} {{ utente.cognome }}
+                </div>
             </div>
         </div>
         {% endfor %}
     </div>
-    </section>
 
-
-    <section class="transazioni">
+    <div class="d-flex justify-content-between align-items-center mb-2">
         <h4>📅 Ultimi movimenti</h4>
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Data</th>
-                <th>Importo</th>
-                <th>Conto (IBAN)</th>
-            </tr>
-            {% for t in transazioni %}
-            <tr>
-                <td>{{ t.id }}</td>
-                <td>{{ t.data }}</td>
-                <td>{{ "%.2f"|format(t.importo) }}</td>
-                <td>{{ t.iban }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </section>
-<script>
-    function toggleIBAN(button) {
-        const card = button.closest(".carta-conto");
-        const masked = card.querySelector(".iban-masked");
-        const full = card.querySelector(".iban-full");
+        <a href="/bonifico" class="btn btn-success">Effettua Bonifico</a>
+    </div>
 
-        if (full.style.display === "none") {
-            full.style.display = "block";
-            masked.style.display = "none";
-            button.textContent = "🙈";
-        } else {
-            full.style.display = "none";
-            masked.style.display = "block";
-            button.textContent = "👁️";
-        }
+    <div class="card shadow-sm mb-5">
+        <div class="card-body p-0">
+            <table class="table table-striped m-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Data</th>
+                        <th>Importo</th>
+                        <th>Descrizione</th>
+                        <th>Tipo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transazioni %}
+                    <tr>
+                        <td>{{ t.data }}</td>
+                        <td>{{ "%.2f"|format(t.importo) }}</td>
+                        <td>{{ t.descrizione }}</td>
+                        <td>{{ t.tipo }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleSaldo(button) {
+    const card = button.closest(".card-body");
+    const masked = card.querySelector(".saldo-masked");
+    const full = card.querySelector(".saldo-full");
+
+    if (full.style.display === "none") {
+        full.style.display = "block";
+        masked.style.display = "none";
+        button.textContent = "🙈";
+    } else {
+        full.style.display = "none";
+        masked.style.display = "block";
+        button.textContent = "👁️";
     }
+}
 </script>
 
 <script>
-    window.addEventListener("beforeunload", () => {
-        navigator.sendBeacon("/logout_auto");
-    });
+window.addEventListener("beforeunload", () => {
+    navigator.sendBeacon("/logout_auto");
+});
 </script>
-
-</body>
-</html>
+{% endblock %}

@@ -1,80 +1,89 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NomeBanca - Login</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-    {% include 'flash_messages.html' %}
-    <div class="login-form">
-        <div class="login-card">
-            <h4>Benvenuto in <strong>NomeBanca</strong></h4>
+{% extends "base.html" %}
 
-            <form action="{{ url_for('login') }}" method="POST">
-                <div class="form-row">
-                    <input type="text" id="codice_titolare" name="codice_titolare" placeholder=" " required> 
-                    <label for="codice-titolare">Codice Titolare</label>
-                </div>
+{% block title %}Login - NomeBanca{% endblock %}
 
-                <div class="form-row">
+{% block navbar %}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-center align-items-center">
+    <div class="card shadow p-4 card-login" style="max-width: 400px; width: 100%;">
+
+        <h4 class="text-center mb-4">
+            Benvenuto in <strong>NomeBanca</strong>
+        </h4>
+
+        <form action="{{ url_for('login') }}" method="POST">
+
+            <!-- Codice Titolare -->
+            <div class="form-floating mb-3">
+                <input type="text" id="codice_titolare" name="codice_titolare" placeholder=" " required>
+                <label for="codice_titolare">Codice Titolare</label>
+            </div>
+
+            <!-- PIN -->
+            <div class="mb-3 position-relative">
+
+                <div class="form-floating">
                     <input type="password" id="pin" inputmode="numeric" maxlength="6" name="pin" placeholder=" " required>
-                    <label for="pin">Pin </label>
-                    <div class="tooltipShow" onclick="mostraPassword()"><img src="/static/show-password.png" id="imgpass" width="30px" />
-                    <span class="tooltipShowText" id="tooltiptext">Mostra Password</span></div>
+                    <label for="pin">PIN</label>
                 </div>
-                
-                <button type="submit" class="buttonLogin">ACCEDI</button>
-            </form>
-        </div>
+
+                <!-- Icona mostra/nascondi password -->
+                <button type="button" onclick="mostraPassword()" class="btn btn-sm btn-outline-secondary position-absolute"
+                        style="top: 15px; right: 10px; border-radius: 50%; padding: 5px 8px;">
+                    <img src="/static/show-password.png" id="imgpass" width="20" alt="Mostra Password">
+                </button>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 mt-3">
+                ACCEDI
+            </button>
+
+        </form>
     </div>
-    <script>
-        function mostraPassword() {
-            var img = document.getElementById('imgpass');
-            var x = document.getElementById('pin');
-            var tooltip = document.getElementById('tooltiptext');
+</div>
 
-            if (x.type === "password") {
-                x.type = "text";
-                img.src = '/static/hide-password.png'; 
-                tooltip.textContent = "Nascondi Password";
-            } else {
-                x.type = "password";
-                img.src = '/static/show-password.png';
-                tooltip.textContent = "Mostra Password";
-            }
-        }  
-    </script>
-    <script>
-        const pinDaPassare = document.getElementById('pin');
+<!-- SCRIPT MOSTRA PASSWORD -->
+<script>
+    function mostraPassword() {
+        const img = document.getElementById('imgpass');
+        const pin = document.getElementById('pin');
 
-        pinDaPassare.addEventListener('keydown', (e) => {
-        // Tasti di controllo che si possono usare: Backspace, Tab, frecce, Ctrl/Cmd, Home/End
-        const controlKeys = ['Backspace','Tab','ArrowLeft','ArrowRight','Delete','Home','End'];
-        if (controlKeys.includes(e.key) || e.metaKey || e.ctrlKey) return; //metaKey e ctrlKey sono per permettere di usare i comandi mac e Ctrl su win/linux
-        // Input solo cifre 0-9
+        if (pin.type === "password") {
+            pin.type = "text";
+            img.src = "/static/hide-password.png";
+        } else {
+            pin.type = "password";
+            img.src = "/static/show-password.png";
+        }
+    }
+</script>
+
+<!-- SCRIPT PIN SOLO NUMERI -->
+<script>
+    const pinInput = document.getElementById('pin');
+
+    pinInput.addEventListener('keydown', (e) => {
+        const allowed = ['Backspace','Tab','ArrowLeft','ArrowRight','Delete','Home','End'];
+        if (allowed.includes(e.key) || e.metaKey || e.ctrlKey) return;
         if (!/^[0-9]$/.test(e.key)) e.preventDefault();
-        });
+    });
 
-        pinDaPassare.addEventListener('paste', (e) => { //'paste' permette di fare il copia/incolla nella casella
+    pinInput.addEventListener('paste', (e) => {
         e.preventDefault();
-        const pasted = (e.clipboardData || window.clipboardData).getData('text');
-        const digits = pasted.replace(/\D+/g, '');
-        
-        const max = pinDaPassare.maxLength > 0 ? pinDaPassare.maxLength : Infinity; // Inserimento solo fino al maxlength rimanente
-        const remain = max - pinDaPassare.value.length; //conta il posti rimanenti di inserimento
-        pinDaPassare.setRangeText(digits.slice(0, remain), pinDaPassare.selectionStart, pinDaPassare.selectionEnd, 'end'); 
-        });
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        const digits = text.replace(/\D+/g, '');
+        const max = pinInput.maxLength || Infinity;
+        const remain = max - pinInput.value.length;
+        pinInput.setRangeText(digits.slice(0, remain), pinInput.selectionStart, pinInput.selectionEnd, 'end');
+    });
 
-        pinDaPassare.addEventListener('input', () => {
-        // Safety net: rimuovi eventuali non numeri residui
-        pinDaPassare.value = pinDaPassare.value.replace(/\D+/g, '');
-        });
-    </script>
+    pinInput.addEventListener('input', () => {
+        pinInput.value = pinInput.value.replace(/\D+/g, '');
+    });
+</script>
 
-
+{% endblock %}
 
 
-</body>
-</html>
