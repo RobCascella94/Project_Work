@@ -1,7 +1,6 @@
 import traceback
 from flask import Flask, redirect, render_template, request, url_for, session, flash
 from models import Utente, Lavoro, Conto, Transazione
-from servizi_banca import crea_transazione, crea_deposito, crea_prelievo, crea_pagamento, crea_bonifico, esegui_transazione_su_conti, genera_iban, crea_nuovo_conto_utente
 from database import Base, engine, SessionLocal
 from functools import wraps
 from sqlalchemy import select
@@ -87,7 +86,12 @@ def registrazione():
         db.add(nuovo_utente)
         db.flush()
 
-        #crea_nuovo_conto_utente(db, nuovo_utente)
+        nuovo_conto = Conto(
+            saldo = Decimal("0.00"),
+            utente_id = nuovo_utente.id,
+            session = db
+        )
+        db.add(nuovo_conto)
         db.commit()
         flash(f"Registrazione avvenuta con successo! Il suo codice titolare è {nuovo_utente.codice_titolare}. Usalo per effettuare il login.", "success")
         return redirect(url_for('login'))
@@ -99,6 +103,7 @@ def registrazione():
     
     except IntegrityError:
         db.rollback()
+        traceback.print_exc()
         flash("Errore interno durante la generazione dei codici. Riprovare.", "error")
         return redirect(url_for('registrazione'))
 

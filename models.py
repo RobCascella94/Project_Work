@@ -28,14 +28,15 @@ class Utente(Base):
         self.lavoro_id = lavoro_id
         
     def genera_codice_titolare(self, session):
-        '''while True:
+        while True:
+            print(f"[OK] sono in genera codice")
             numero = random.randint(1, 999999)
             codice = f"CT{numero:06d}"
+            print(f"[OK] sono in genera codice: {codice}")
 
             if not session.query(Utente).filter_by(codice_titolare=codice).first():
-                self.codice_titolare = codice
-                break'''
-        self.codice_titolare="stringa test"
+                return codice
+ 
                 
 
     def crea_pin(self, pin):
@@ -85,8 +86,26 @@ class Conto(Base):
     #relazioni
     utente = relationship("Utente", back_populates="conti") #più conti possono appartenere ad un utente
     transazioni_effettuate = relationship("Transazione", foreign_keys="Transazione.conto_mittente_id", back_populates="conto_mittente")
-
     transazioni_ricevute = relationship("Transazione", foreign_keys="Transazione.conto_destinatario_id", back_populates="conto_destinatario")
+
+    def __init__(self, saldo, utente_id, session):
+        self.iban = self.genera_iban(session)
+        self.saldo = saldo
+        self.utente_id = utente_id
+
+    def genera_iban(self, session):
+        #semplici codici banca e filiale fissi per semplicità 
+        abi = "123"     #codice banca
+        cab = "456"     #codice filiale
+
+        while True:
+            numero = random.randint(1, 999999)
+            conto = f"{numero:06d}"
+            iban = f"IT{abi}{cab}{conto}"
+
+            if not session.query(Conto).filter_by(iban=iban).first():
+                return iban
+
 
     def applica_transazione(self, transazione: "Transazione"):
         importo = Decimal(transazione.importo)
