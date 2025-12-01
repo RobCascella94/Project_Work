@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-4" style="max-width: 600px;">
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="m-0">💸 Effettua un Bonifico</h5>
+        </div>
+
+        <div class="card-body">
+
+            {% include 'flash_messages.html' %}
+
+            <form method="POST" action="{{ url_for('effettua_bonifico') }}">
+
+                <!-- IMPORTO -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Importo (€)</label>
+                    <input type="number" name="importo" class="form-control" step="0.01" min="0.01" required>
+                </div>
+
+                <!-- IBAN DESTINATARIO -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">IBAN Destinatario</label>
+                    <input type="text" name="iban" class="form-control" maxlength="27" required>
+                    <div class="form-text">Inserisci l'IBAN completo (es: IT123456000123456789)</div>
+                </div>
+
+                <!-- DESCRIZIONE -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Descrizione (opzionale)</label>
+                    <textarea name="descrizione" class="form-control" rows="3"></textarea>
+                </div>
+
+                <!-- BOTTONE INVIO -->
+                <button type="submit" class="btn btn-success w-100 py-2">
+                    ➤ Invia Bonifico
+                </button>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

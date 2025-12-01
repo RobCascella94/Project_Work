@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 450px;">
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="m-0">Apri nuovo conto</h5>
+        </div>
+
+        <form method="POST">
+            <div class="card-body">
+                <p>Per aprire un nuovo conto, inserisci il tuo PIN.</p>
+
+                <input type="password" name="pin" maxlength="6"
+                       class="form-control mb-3 text-center"
+                       placeholder="Inserisci PIN" required>
+            </div>
+
+            <div class="card-footer d-flex justify-content-between">
+                <a href="{{ url_for('pagina_privata') }}" class="btn btn-secondary">Annulla</a>
+                <button class="btn btn-primary" type="submit">Conferma</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
