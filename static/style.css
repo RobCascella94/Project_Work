@@ -13,6 +13,7 @@
 }
 
 body {
+
     font-family: 'Poppins', sans-serif;
     background: linear-gradient(0deg, var(--colore4) 0%, var(--colore3) 50%, var(--colore2) 100%);
     color: white;
@@ -509,211 +510,114 @@ form .button-registra button {
 /*--- pagina_privata.html ---*/
 
 
-.logo h3{
-    font-size: 20px;
-    color: var(--colore5);
-    
-}
-
-
-.buttonLogout{
-    background-color: var(--colore1);
-    cursor: pointer;
-    border: none;
-}
-
-.buttonLogout:hover{
-    border: 2px solid var(--colore5);
-    padding: 2px 2px;
-    border-radius: 2px;
-    box-shadow: 0 3px 14px var(--colore5);
-    background: var(--colore5);
-    color: var(--colore3);
-    font-weight: bold;
-    border: 2px solid var(--colore4);
-    outline: none;
-
-}
-
-
-.side-navbar{
-    margin-top: 10px;
-    display:flex;
-    height: 40%;
-    width: 60px;
-    background-color: var(--colore1);
-}
-
-.pulsante-sidebar a{
-    display: flex;
-    color: #fff;
-    cursor: pointer;
-    margin-top: 20px;
-    justify-content: space-between;
-    padding: 1px 1px;
-    margin-left: 2px;
-    background: transparent;
-
- 
-}
-
-.pulsante-sidebar a:hover{
-    box-shadow: 0 3px 14px var(--colore5);
-}
-
-.pulsante-sidebar a:hover,
-.pulsante-sidebar a:hover {
-    background: var(--colore5);
-    color: var(--colore3);
-    font-weight: bold;
-    border: 2px solid var(--colore2);
-    outline: none;
-}
-h2,
 table {
     width: 50%;
-    background: var(--colore3); 
     border-collapse: collapse;
     margin: auto;
-    color: var(--colore5);
 }
 
-h2, th, td{
+th, td{
     padding: 1rem;
     text-align: center;
 
-}
-
-h2{
-    background: transparent;
-    font-size: 1.5rem;
-    font-weight: bold;
-    text-transform: uppercase;
 }
 
 th{
     background: var(--colore1);
 }
 
-tr:nth-of-type(2n){
-    background: var(--colore1);
-    opacity: 0.5;
-}
 
 .table-container{
     max-width: 100%;
     overflow-x: scroll;
 }
 
-.carte-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: flex-start;
+
+/* =============================== */
+/*   🔷 PROFILO MODAL FINTECH      */
+/* =============================== */
+
+.navbar {
+    padding-top: -50px !important;
+    margin-bottom: 0 !important;    
 }
 
-
-
-.centered-cards {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    flex-wrap: wrap;
+.container mt-2{
+    top: 50px !important;    
+}
+#profiloModal .modal-content {
+    
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.15);
+    overflow: hidden;
+    animation: fadeUp 0.25s ease;
 }
 
-.card-holder {
-    margin-top: 10px;
-    font-size: 1.1em;
-    letter-spacing: 1px;
+#profiloModal .modal-header {
+    background: linear-gradient(135deg, #2c3e50, #1a252f);
+    color: white;
+    padding: 20px 25px;
+    border-bottom: none;
+    
+}
+
+#profiloModal .modal-title {
+    font-size: 1.3rem;
     font-weight: 600;
 }
 
-
-/* Effetto riflesso sulla carta */
-.carta-conto {
-    position: relative;
-    overflow: hidden;
+#profiloModal .modal-body {
+    padding: 25px;
+    background: #f8f9fb;
 }
 
-/* Riflesso invisibile di base */
-.carta-conto::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 120%;
-    height: 120%;
-    pointer-events: none;
-    background: linear-gradient(
-        130deg,
-        rgba(255, 255, 255, 0.15) 0%,
-        rgba(255, 255, 255, 0.05) 30%,
-        rgba(255, 255, 255, 0.0) 60%
-    );
-
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
+#profiloModal .modal-body p {
+    font-size: 1.05rem;
+    padding: 8px 0;
+    margin: 0;
+    border-bottom: 1px solid #e4e6ea;
 }
 
-
-.carta-conto:hover::before {
-    opacity: 1;
+#profiloModal .modal-body p:last-child {
+    border-bottom: none;
 }
 
-
-h4{
-    text-align: center;
+#profiloModal strong, #profiloModal p {
+    color: #2c3e50;
 }
 
-
-
-
-
-
-.carta-conto {
-    width: 320px;
-    background: linear-gradient(135deg, #1e3c72, #2a5298);
-    color: white;
-    padding: 20px;
-    border-radius: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    position: relative;
-    transition: transform 0.2s ease;
+#profiloModal .modal-footer {
+    background: #f8f9fb;
+    padding: 15px 20px;
+    border-top: none;
 }
 
-.carta-conto:hover {
-    transform: translateY(-5px);
+#profiloModal .btn-secondary {
+    border-radius: 8px;
+    padding: 8px 16px;
 }
 
-.carta-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* 🔥 Animazione leggera di comparsa */
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.carta-logo {
-    font-size: 1.2em;
-    font-weight: bold;
-}
-
-.toggle-iban {
-    background: none;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-    color: white;
-}
-
-.iban-section {
-    margin-top: 20px;
-    font-size: 1.3em;
-    letter-spacing: 2px;
-}
-
-.carta-footer {
-    margin-top: 25px;
-    font-size: 0.9em;
-    opacity: 0.9;
+.card-body .conto-info .conto-header {
+    max-width: 280px;     /* 🔥 Larghezza reale della card */
+    margin: 0 auto;       /* La centra */
+    border-radius: 16px;
+    background: red;
+    padding: 18px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* flash_messages.html */
