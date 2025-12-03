@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-4" style="max-width: 600px;">
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="m-0">🔧 Modifica PIN</h5>
+        </div>
+
+        <div class="card-body">
+
+            {% include 'flash_messages.html' %}
+
+            <form method="POST" action="{{ url_for('modifica_profilo') }}">
+
+                <!-- PIN ATTUALE -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">PIN attuale</label>
+                    <input type="password" name="vecchio_pin" class="form-control" minlength="6" required>
+                </div>
+
+                <!-- NUOVO PIN -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Nuovo PIN</label>
+                    <input type="password" name="nuovo_pin" class="form-control" minlength="6" required>
+                    <div class="form-text">
+                        Il PIN deve contenere almeno 6 cifre e non può avere una cifra ripetuta 3 volte consecutive.
+                    </div>
+                </div>
+
+                <!-- CONFERMA PIN -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Conferma nuovo PIN</label>
+                    <input type="password" name="conferma_pin" class="form-control" minlength="6" required>
+                </div>
+
+                <!-- BOTTONI -->
+                <div class="d-flex justify-content-between gap-2">
+
+                    <!-- ANNULLA  -->
+                    <a href="{{ url_for('pagina_privata') }}" class="btn btn-danger w-100 py-2">
+                        ✖ Annulla
+                    </a>
+
+                    <!-- AGGIORNA -->
+                    <button type="submit" class="btn btn-primary w-100 py-2">
+                        ✔ Aggiorna PIN
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

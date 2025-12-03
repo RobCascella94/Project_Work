@@ -30,20 +30,25 @@
 
                 <!-- DESCRIZIONE -->
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Descrizione </label>
+                    <label class="form-label fw-bold">Causale </label>
                     <textarea name="descrizione" class="form-control" rows="3"></textarea>
                 </div>
 
-                <!-- BOTTONE INVIO -->
-                <button type="submit" class="btn btn-success w-100 py-2">
-                    ➤ Invia Bonifico
-                </button>
 
+                <div class="d-flex justify-content-between gap-2">
+                    <!-- ANNULLA (ROSSO, A DESTRA) -->
+                    <a href="{{ url_for('pagina_privata') }}" class="btn btn-danger w-100 py-2">
+                        ✖ Annulla
+                    </a>
+
+                    <!-- BOTTONE INVIO -->
+                    <button type="submit" class="btn btn-success w-100 py-2">
+                        ➤ Invia Bonifico
+                    </button>
+                </div>
             </form>
-
         </div>
     </div>
-
 </div>
 
 {% endblock %}
