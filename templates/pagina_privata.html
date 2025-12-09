@@ -6,7 +6,7 @@
 {% block navbar %}
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3 py-2 mb-4">
   <a class="navbar-brand fw-bold" href="#">
-    💼 NomeBanca
+     🏦 U.T.P. Banca Cascella
   </a>
 
   <div class="ms-auto">
@@ -24,6 +24,9 @@
           </a>
           <a class="dropdown-item" href="{{ url_for('modifica_profilo') }}">
             ✏️ Modifica profilo
+          </a>
+          <a class="dropdown-item" href="{{ url_for('richiesta_prestito') }}">
+            📝 Richiedi Prestito
           </a>
         </li>
 
@@ -50,7 +53,7 @@
 <div class="container mt-2" style="padding-top: 50px !important;">
     {% include 'flash_messages.html' %}
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 header-conto">
 
         <h4 class="m-0">💳 Conto</h4>
 
@@ -73,10 +76,10 @@
         </a>
     </div>
 
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm mb-4 card-conto">
         <div class="card-body conto-info">
             <div class="d-flex justify-content-between align-items-center mb-2 conto-header">
-                <span class="fw-bold fs-5">NomeBanca</span>
+                <span class="fw-bold fs-5">U.T.P. Banca Cascella</span>
 
                 <button class="btn btn-sm btn-outline-secondary" onclick="toggleSaldo(this)">👁️</button>
             </div>
@@ -92,7 +95,7 @@
             </p>
         </div>
 
-        <div class="card-footer text-center small text-muted">
+        <div class="card-footer text-center small text-muted card-nome-utente">
             {{ utente.nome }} {{ utente.cognome }}
         </div>
     </div>

@@ -1,14 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Home - NomeBanca{% endblock %}
+{% block title %}Home - U.T.P. Banca Cascella{% endblock %}
 
 {% block navbar %}
-<nav class="navbar navbar-expand-md" style="background-color: var(--colore1);">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3 py-2 mb-4">
     <div class="container-fluid">
 
         <a class="navbar-brand d-flex align-items-center text-white" href="/">
-            <img src="" alt="Logo" width="40" height="40" class="me-2">
-            <span>Nome Banca</span>
+            <span>🏦 U.T.P. Banca Cascella</span>
         </a>
 
         <button class="navbar-toggler text-white border-0" 
@@ -40,14 +39,14 @@
 
 {% block content %}
 <main class="home-section d-flex align-items-center">
-    <div class="container text-center content">
-        <h1 class="title">Benvenuti in Nome Banca</h1>
+    <div class="container text-center content container-home">
+        <h1 class="title">Benvenuti in U.T.P. Banca Cascella</h1>
         <p class="description">
-            Benvenuto in banca! Se sei già nostro cliente, ti invitiamo a esplorare i numerosi servizi a tua disposizione. 
+            Benvenuto! Se sei già nostro cliente, ti invitiamo a esplorare i numerosi servizi a tua disposizione. 
             Se apri per la prima volta un nuovo conto, potrai usufruire di un esclusivo bonus di benvenuto di 100€. 
             Accedi ora per scoprire tutte le opportunità che ti attendono!</p>
 
-        <div class="d-flex justify-content-center mt-4">
+        <div class="d-flex justify-content-center mt-4 content-pulsanti">
             <a href="/login" class="accedi me-3">ACCEDI</a>
             <a href="/registrazione" class="crea">NUOVO CONTO</a>
         </div>
