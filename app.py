@@ -1,17 +1,19 @@
+import re
 import traceback
 from flask import Flask, redirect, render_template, request, url_for, session, flash
-from models import Utente, Lavoro, Conto, Transazione
+from models import TipoTransazione, Utente, Lavoro, Conto, Transazione
 from database import Base, engine, SessionLocal
 from functools import wraps
-from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 from decimal import Decimal
+from datetime import datetime, timedelta
 
 
 app = Flask(__name__)
 
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+app.config['SESSION_PERMANENT'] = False
 
 Base.metadata.create_all(bind=engine)
 
@@ -39,6 +41,7 @@ def login():
         utente = db.query(Utente).filter(Utente.codice_titolare == codice_titolare_inserito).first()
 
         if utente and utente.verifica_pin(pin_inserito):
+            session.permanent = app.config['SESSION_PERMANENT']
             session["utente_id"] = utente.id
             flash(f"Benvenuto {utente.nome}!", "success")
             return redirect(url_for("pagina_privata"))
@@ -74,24 +77,39 @@ def registrazione():
         flash ("I pin non corrispondono. Riprova!", "error")
         return redirect(url_for('registrazione'))
     
+    utente_esistente = db.query(Utente).filter_by(codice_fiscale=codice_fiscale_inserito).first() #controllo se esiste già un utente con quel codice fiscale
+    if utente_esistente:
+        flash("Esiste già un utente con questo codice fiscale. Effettua il login per aprire un nuovo conto.", "error")
+        return redirect(url_for('login'))
+    
     try:
         nuovo_utente = Utente(
-            nome = nome_inserito,
-            cognome = cognome_inserito,
-            codice_fiscale = codice_fiscale_inserito,
-            lavoro_id = lavoro_inserito,
-            session=db
+            nome_inserito,
+            cognome_inserito,
+            codice_fiscale_inserito,
+            lavoro_inserito,
+            db
         )
         nuovo_utente.crea_pin(pin1_inserito)
         db.add(nuovo_utente)
         db.flush()
 
+        
         nuovo_conto = Conto(
-            saldo = Decimal("0.00"),
-            utente_id = nuovo_utente.id,
-            session = db
+            nuovo_utente.id,
+            db
         )
         db.add(nuovo_conto)
+        db.flush()
+
+        #bonus nuovo conto con saldo a 100€
+        trans =Transazione(
+            importo=Decimal("100.00"),
+            descrizione="Bonus benvenuto nuovo conto",
+            tipo=TipoTransazione.BONUS,
+            conto_destinatario_id=nuovo_conto.id
+        )
+        db.add(trans)
         db.commit()
         flash(f"Registrazione avvenuta con successo! Il suo codice titolare è {nuovo_utente.codice_titolare}. Usalo per effettuare il login.", "success")
         return redirect(url_for('login'))
@@ -118,14 +136,6 @@ def registrazione():
 
 
 
-
-#@app.route('/effettua_bonifico', methods=['GET','POST'])
-##def effettua_bonifico():
-
-
-
-
-
 def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -137,45 +147,62 @@ def login_required(f):
 
 
 
-@app.route('/pagina_privata')
-@login_required  #Ogni volta che un utente prova ad accedere a /pagina_privata, prima di eseguire il codice di pagina_privata() viene eseguito login_required(). se autentificato continua altrimenti no
+
+@app.route('/pagina_privata', methods=['GET','POST'])
+@login_required
 def pagina_privata():
     db = SessionLocal()
     try:
         utente_id = session.get("utente_id")
-        utente = db.execute(select(Utente).options(
-            joinedload(Utente.lavoro),
-            joinedload(Utente.conti).joinedload(Conto.transazioni_effettuate),
-            joinedload(Utente.conti).joinedload(Conto.transazioni_ricevute)
-            ).where(Utente.id == utente_id)).unique().scalar_one_or_none()
 
-        if not utente:
-            flash("Utente non trovato, effettua il login.", "error")
+        if not utente_id:
+            flash("Sessione scaduta. Effettua nuovamente il login.", "error")
             return redirect(url_for('login'))
 
-        # Raccogli tutte le transazioni dei conti (sia effettuate che ricevute)
-        transazioni = []
-        for conto in utente.conti:
-            movimenti = list(conto.transazioni_effettuate) + list(conto.transazioni_ricevute)
-            for t in movimenti:
-                transazioni.append({
-                    "id": t.id,
-                    "data": t.data,
-                    "importo": t.importo,
-                    "iban": conto.iban,
-                    "descrizione": t.descrizione,
-                    "tipo": t.tipo.value
-                })
+        utente = db.query(Utente).options(joinedload(Utente.conti)).filter_by(id=utente_id).first()
 
-        # Ordinate per data DESC
-        transazioni.sort(key=lambda x: x["data"], reverse=True)
+        if not utente:
+            flash("Utente non trovato.", "error")
+            return redirect(url_for('login'))
 
-        return render_template("pagina_privata.html", utente=utente, transazioni=transazioni)
+        conti = utente.conti
 
+        # --- LOGICA CONTO SELEZIONATO ---
+        conto_id = request.form.get("conto_id", type=int) or request.args.get("conto_id", type=int)
+
+        if conto_id:
+            session["conto_selezionato"] = conto_id
+            conto_selezionato = next((c for c in conti if c.id == conto_id), None)
+            if conto_selezionato is None:
+                flash("Conto non valido.", "error")
+                return redirect(url_for('pagina_privata'))
+        else:
+                conto_id = session.get("conto_selezionato")
+                conto_selezionato = next((c for c in conti if c.id == conto_id), None) if conto_id else conti[0]
+
+
+        # --- CARICO LE TRANSAZIONI SOLO DEL CONTO SELEZIONATO ---
+        transazioni = (
+            db.query(Transazione)
+            .filter(
+                (Transazione.conto_mittente_id == conto_selezionato.id) |
+                (Transazione.conto_destinatario_id == conto_selezionato.id)
+            )
+            .order_by(Transazione.data.desc())
+            .all()
+        )
+
+        return render_template(
+            "pagina_privata.html",
+            utente=utente,
+            conti=conti,
+            conto_selezionato=conto_selezionato,
+            transazioni=transazioni
+        )
 
     except Exception as e:
-        print(f"❌ Errore in /pagina_privata: {e}")
-        flash("Errore durante il caricamento della pagina privata.", "error")
+        print(f"❌ ERRORE /pagina_privata: {e}")
+        flash("Errore durante il caricamento della pagina.", "error")
         return redirect(url_for('login'))
 
     finally:
@@ -184,17 +211,187 @@ def pagina_privata():
 
 
 
+
+@app.route("/effettua_bonifico", methods=["GET", "POST"])
+@login_required
+def effettua_bonifico():
+    db = SessionLocal()
+    if request.method == "GET":
+        return render_template("effettua_bonifico.html")
+    
+    try:
+        utente_id = session.get("utente_id")
+        conto_id = session.get("conto_selezionato")
+        importo_inserito = Decimal(request.form["importo"])
+        iban_destinatario = request.form["iban"].strip() #rimuove gli eventuali spazi
+        descrizione_inserita = request.form.get("descrizione", "")
+
+        conto_mittente = db.query(Conto).filter_by(
+            id=conto_id,
+            utente_id=utente_id
+        ).first()
+
+        if not conto_mittente:
+            flash("Nessun conto disponibile.", "error")
+            return redirect(url_for("pagina_privata"))
+
+        # Trova destinatario
+        conto_destinatario = db.query(Conto).filter_by(iban=iban_destinatario).first()
+
+        if not conto_destinatario:
+            flash("IBAN destinatario non valido.", "error")
+            return redirect(url_for("effettua_bonifico"))
+
+
+        # Crea transazione
+        trans=conto_mittente.bonifico(
+            conto_destinatario,
+            importo_inserito,
+            descrizione_inserita
+        )
+
+        db.add(trans)
+        db.commit()
+
+        flash("Bonifico effettuato con successo!", "success")
+        return redirect(url_for("pagina_privata"))
+
+    except Exception as e:
+        print("ERRORE BONIFICO:", e)
+        flash("Errore durante il bonifico.", "error")
+        return redirect(url_for("effettua_bonifico"))
+
+    finally:
+        db.close()
+
+
+
+
+
+@app.route("/apri_nuovo_conto", methods=["GET", "POST"])
+@login_required
+def apri_nuovo_conto():
+    db = SessionLocal()
+
+    try:
+        utente_id = session.get("utente_id")
+        utente = db.query(Utente).filter_by(id=utente_id).first()
+
+        if request.method == "POST":
+            pin = request.form.get("pin")
+
+            # 1️⃣ Verifica PIN
+            if not utente.verifica_pin(pin):
+                flash("PIN errato.", "error")
+                return redirect(url_for("apri_nuovo_conto"))
+
+            # 2️⃣ Limite temporale — max 1 conto ogni 24 ore
+            ultimo_conto = (
+                db.query(Conto)
+                .filter_by(utente_id=utente.id)
+                .order_by(Conto.data_creazione.desc())
+                .first()
+            )
+
+            
+
+            '''if ultimo_conto:
+                limite = ultimo_conto.data_creazione + timedelta(hours=24)
+                if datetime.now(ultimo_conto.data_creazione.tzinfo) < limite:
+                    flash("Puoi aprire un nuovo conto solo ogni 24 ore.", "error")
+                    return redirect(url_for("pagina_privata")) '''
+
+            # 3️⃣ CREA NUOVO CONTO
+            nuovo = Conto(utente.id, db)
+            db.add(nuovo)
+            db.commit()
+
+            flash("Nuovo conto aperto con successo!", "success")
+            return redirect(url_for("pagina_privata"))
+
+        return render_template("apri_nuovo_conto.html", utente=utente)
+
+    finally:
+        db.close()
+
+
+
+@app.route("/modifica_profilo", methods=["GET", "POST"])
+@login_required
+def modifica_profilo():
+    db = SessionLocal() 
+    utente_id = session.get("utente_id")
+    utente = db.query(Utente).filter_by(id=utente_id).first()
+
+    if request.method == "POST":
+        vecchio_pin_inserito = request.form["vecchio_pin"]
+        nuovo_pin_inserito = request.form["nuovo_pin"]
+        conferma_pin_inserito = request.form["conferma_pin"]
+
+        # verifica campi vuoti
+        if not vecchio_pin_inserito or not nuovo_pin_inserito or not conferma_pin_inserito:
+            flash("Tutti i campi sono obbligatori.", "error")
+            return redirect(url_for("modifica_profilo"))
+
+        # verifica pin attuale
+        if not utente.verifica_pin(vecchio_pin_inserito):
+            flash("Il PIN attuale non è corretto.", "error")
+            return redirect(url_for("modifica_profilo"))
+        
+        # verifica nuovi pin se ci sono ripetizioni dei numeri    
+        if re.search(r"(\d)\1\1", nuovo_pin_inserito) or re.search(r"(\d)\1\1", conferma_pin_inserito):
+            flash("Il nuovo PIN non può contenere una cifra ripetuta tre volte di seguito.", "error")
+            return redirect(url_for("modifica_profilo"))
+        
+        # verifica nuovo pin diverso da attuale
+        if vecchio_pin_inserito == nuovo_pin_inserito:
+            flash("Il nuovo PIN deve essere diverso da quello attuale.", "error")
+            return redirect(url_for("modifica_profilo"))
+        
+        # verifica corrispondenza nuovo pin
+        if nuovo_pin_inserito != conferma_pin_inserito:
+            flash("I PIN inseriti non coincidono.", "error")
+            return redirect(url_for("modifica_profilo"))
+
+        try:
+            utente.crea_pin(nuovo_pin_inserito)
+            db.commit()
+            flash("Il PIN è stato aggiornato con successo. Effettua di nuovo il login.", "success")
+
+            # LOGOUT AUTOMATICO
+            session.clear()
+            return redirect(url_for("login"))
+
+        except ValueError as e:
+            db.rollback()
+            flash(str(e), "danger")
+            return redirect(url_for("modifica_profilo"))
+        except Exception:
+            db.rollback()
+            flash("Errore durante l'aggiornamento del PIN.", "danger")
+            return redirect(url_for("modifica_profilo"))
+
+    return render_template("modifica_profilo.html")
+
+@app.route('/richiesta_prestito', methods=['GET', 'POST'])
+@login_required
+def richiesta_prestito():
+    if request.method == 'GET':
+        return render_template('richiesta_prestito.html')
+
+
+
 @app.post('/logout')
 def logout():
-    session.clear()
+    session.clear() 
     flash("Logout effettuato con successo.", "success")
     return redirect(url_for('home'))
 
-@app.post("/logout_auto") #logout automantico quando si chiude il browser
+'''@app.post("/logout_auto") #logout automantico quando si chiude il browser
 def logout_auto():
     session.clear()
     return ("", 204)
 
-
+'''
 
 
