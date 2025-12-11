@@ -1,11 +1,11 @@
 import random
 import bcrypt, re
-from sqlalchemy import Column, DateTime, Numeric, Integer, String, ForeignKey, func
+from sqlalchemy import Boolean, Column, DateTime, Numeric, Integer, String, ForeignKey, func
 from sqlalchemy.orm import relationship, validates
 from enum import Enum as PyEnum
 from sqlalchemy import Enum as SqlEnum
 from database import Base
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 class Utente(Base):
     __tablename__ = 'utenti'
@@ -16,7 +16,10 @@ class Utente(Base):
     codice_titolare = Column(String, nullable=False, unique=True)
     pin_hash = Column(String, nullable=False)
 
+    #chiave esterna
     lavoro_id = Column(Integer, ForeignKey('lavori.id'), nullable=True)
+
+    #relazioni
     lavoro = relationship("Lavoro", back_populates="utenti") 
     conti = relationship("Conto", back_populates="utente", cascade="all, delete-orphan") 
 
@@ -35,16 +38,14 @@ class Utente(Base):
             print(f"[OK] sono in genera codice: {codice}")
 
             if not session.query(Utente).filter_by(codice_titolare=codice).first():
-                return codice
- 
-                
+                return codice             
 
     def crea_pin(self, pin):
         if len(pin)<6: 
             raise ValueError("Il PIN deve essere di almeno 6 cifre.")
        
         if re.search(r"(\d)\1\1", pin): 
-            raise ValueError("Il PIN da lei inserito contiene una cifra ripetuta tre volte di seguito")
+            raise ValueError("Il PIN da lei inserito contiene una cifra ripetuta tre volte di seguito.")
         
         pin_bytes = pin.encode('utf-8') 
         salt = bcrypt.gensalt()         
@@ -61,24 +62,21 @@ class Utente(Base):
         return bcrypt.checkpw(pin_bytes, db_hash_bytes)
 
 
-
 class Lavoro(Base):
     __tablename__ = "lavori"
     id = Column(Integer, primary_key=True, autoincrement=True)
     nome_lavoro = Column(String, nullable=False, unique=True)
     stipendio_mensile = Column(Numeric(10,2), nullable=False)
 
+    #relazione
     utenti = relationship("Utente", back_populates="lavoro") #un lavoro può essere svolto da più utenti
-
-
-
 
 
 class Conto(Base):
     __tablename__ = 'conti'
     id = Column(Integer, primary_key=True, autoincrement=True)
     iban = Column(String, nullable=False, unique=True)
-    saldo = Column(Numeric(10,2), nullable=False, default=Decimal("0.00"))
+    data_creazione = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     #chiavi esterne
     utente_id = Column(Integer, ForeignKey('utenti.id'), nullable=False)
@@ -88,9 +86,8 @@ class Conto(Base):
     transazioni_effettuate = relationship("Transazione", foreign_keys="Transazione.conto_mittente_id", back_populates="conto_mittente")
     transazioni_ricevute = relationship("Transazione", foreign_keys="Transazione.conto_destinatario_id", back_populates="conto_destinatario")
 
-    def __init__(self, saldo, utente_id, session):
+    def __init__(self, utente_id, session):
         self.iban = self.genera_iban(session)
-        self.saldo = saldo
         self.utente_id = utente_id
 
     def genera_iban(self, session):
@@ -107,31 +104,80 @@ class Conto(Base):
                 return iban
 
 
-    def applica_transazione(self, transazione: "Transazione"):
-        importo = Decimal(transazione.importo)
-
+    @property #in questo modo posso usarlo come attributo
+    def saldo_corrente(self):
+        entrate = sum(t.importo for t in self.transazioni_ricevute)
+        uscite = sum(t.importo for t in self.transazioni_effettuate)
+        return entrate - uscite
+    
+    def verifica_importo(self,importo):
+        importo = Decimal(importo)
         if importo <= 0:
-            raise ValueError("L'importo deve essere positivo.")
+            raise ValueError("L'importo non valido.")
+        
+    def verifica_saldo(self, importo):
+        self.verifica_importo(importo)
+        if self.saldo_corrente < importo:
+            raise ValueError("Saldo insufficiente.")   
 
-        #il conto è il MITTENTE
-        if transazione.conto_mittente_id == self.id:
-            if self.saldo < importo:
-                raise ValueError("Saldo insufficiente per eseguire la transazione.")
-            self.saldo -= importo
+    def bonifico(self, destinazione, importo, descrizione):
+        self.verifica_saldo(importo)
 
-        #il conto è il DESTINATARIO
-        if transazione.conto_destinatario_id == self.id:
-            self.saldo += importo
+        trans = Transazione(
+            importo=importo,
+            tipo=TipoTransazione.BONIFICO,
+            conto_mittente=self,
+            conto_destinatario=destinazione,
+            descrizione=descrizione,
+        )
 
+        return trans
 
+    def prelievo(self, importo, descrizione="Prelievo da ATM"):
+        self.verifica_saldo(importo)
 
+        trans = Transazione(
+            importo=importo,
+            tipo=TipoTransazione.PRELIEVO,
+            conto_mittente=self,
+            conto_destinatario=None,
+            descrizione=descrizione
+        )
+
+        return trans
+
+    def deposito(self, importo, descrizione="Deposito da ATM"):
+        self.verifica_importo(importo)
+        
+        trans = Transazione(
+            importo=importo,
+            tipo=TipoTransazione.DEPOSITO,
+            conto_mittente=None,
+            conto_destinatario=self,
+            descrizione=descrizione
+        )
+        return trans
+    
+    def pagamento(self, esercente, importo, descrizione):
+        self.verifica_saldo(importo)
+
+        trans = Transazione(
+            importo=importo,
+            tipo=TipoTransazione.PAGAMENTO,
+            conto_mittente=self,
+            conto_destinatario=esercente,
+            descrizione=descrizione
+        )
+        return trans
 
 
 class TipoTransazione(PyEnum):
-    BONIFICO = "bonifico"  #richiede mittente e destinatario
-    DEPOSITO = "deposito"  #solo destinatario
-    PRELIEVO = "prelievo"  #solo mittente
-    PAGAMENTO = "pagamento" #come bonifico ma a un esercente
+    BONIFICO = "Bonifico"  #richiede mittente e destinatario
+    DEPOSITO = "Deposito"  #solo destinatario. da atm
+    PRELIEVO = "Prelievo"  #solo mittente. da atm
+    PAGAMENTO = "Pagamento" #come bonifico ma a un esercente
+    BONUS = "Bonus"     #solo destinatario, da parte della banca
+
 
 class Transazione(Base):
     __tablename__ = 'transazioni'
@@ -141,7 +187,6 @@ class Transazione(Base):
     descrizione = Column(String, nullable=True)
     tipo = Column(SqlEnum(TipoTransazione, name="tipo_transazione"), nullable=False)
 
-
     #chiave esterna
     conto_mittente_id = Column(Integer, ForeignKey('conti.id'), nullable=True)
     conto_destinatario_id = Column(Integer, ForeignKey('conti.id'), nullable=True)
@@ -150,3 +195,5 @@ class Transazione(Base):
     conto_mittente = relationship("Conto", foreign_keys=[conto_mittente_id], back_populates="transazioni_effettuate")
     conto_destinatario = relationship("Conto", foreign_keys=[conto_destinatario_id], back_populates="transazioni_ricevute")
 
+
+    

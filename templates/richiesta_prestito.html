@@ -11,7 +11,7 @@
             <!-- IMPORTO TOTALE -->
             <div class="mb-4">
                 <label class="fw-bold mb-2">
-                    Somma di denaro di cui hai bisogno:
+                    Importo richiesto:
                 </label>
 
                 <div class="text-center mb-2">
@@ -22,8 +22,7 @@
 
                 <input type="range"
                        class="form-range"
-                       min="1000"
-                       max="25000"
+                       min="1000" max="25000"
                        step="500"
                        value="10000"
                        id="importoRange"
@@ -35,38 +34,34 @@
                 </div>
             </div>
 
-            <!-- RATA -->
+            <!-- TASSO FISSO -->
             <div class="mb-4">
                 <label class="fw-bold mb-2">
-                    Somma rata più comoda per te:
+                    Tasso Annuo Nominale (TAN):
                 </label>
-
-                <div class="text-center mb-2">
-                    <span class="badge bg-dark fs-6 px-3 py-2" id="rataLabel">
-                        350€
-                    </span>
+                <div class="alert alert-info py-2 m-0 text-center">
+                    <strong>6,5% annuo</strong>
                 </div>
+            </div>
 
-                <input type="range"
-                       class="form-range"
-                       min="150"
-                       max="500"
-                       step="10"
-                       value="350"
-                       id="rataRange"
-                       oninput="aggiornaRata()">
-
-                <div class="d-flex justify-content-between text-muted">
-                    <small>150€</small>
-                    <small>500€</small>
-                </div>
+            <!-- DURATA -->
+            <div class="mb-4">
+                <label class="fw-bold mb-2">Durata del prestito:</label>
+                <select class="form-select" id="durata" required onchange="checkForm()">
+                    <option value="" selected disabled>Seleziona durata...</option>
+                    <option value="12">12 mesi</option>
+                    <option value="24">24 mesi</option>
+                    <option value="36">36 mesi</option>
+                    <option value="48">48 mesi</option>
+                    <option value="60">60 mesi</option>
+                </select>
             </div>
 
             <!-- FINALITÀ -->
             <div class="mb-4">
-                <label class="fw-bold mb-2">Finalità prestito?</label>
-                <select class="form-select" required>
-                    <option selected disabled>Scegli opzione...</option>
+                <label class="fw-bold mb-2">Finalità prestito:</label>
+                <select class="form-select" id="finalita" required onchange="checkForm()">
+                    <option value="" selected disabled>Scegli opzione...</option>
                     <option value="auto">Acquisto auto</option>
                     <option value="casa">Spese casa</option>
                     <option value="studio">Studio / Formazione</option>
@@ -81,7 +76,7 @@
                     Annulla
                 </a>
 
-                <button class="btn btn-success px-4"id="btnInvia" disabled>
+                <button class="btn btn-success px-4" id="btnInvia" disabled>
                     Richiedi Prestito
                 </button>
             </div>
@@ -97,22 +92,15 @@
         const range = document.getElementById("importoRange");
         document.getElementById("importoLabel").innerText =
             new Intl.NumberFormat('it-IT').format(range.value) + "€";
-    }
-
-    function aggiornaRata() {
-        const range = document.getElementById("rataRange");
-        document.getElementById("rataLabel").innerText = range.value + "€";
+        checkForm();
     }
 
     function checkForm() {
+        const durata = document.getElementById("durata").value;
         const finalita = document.getElementById("finalita").value;
         const btn = document.getElementById("btnInvia");
 
-        if (finalita !== "") {
-            btn.disabled = false;
-        } else {
-            btn.disabled = true;
-        }
+        btn.disabled = !(durata !== "" && finalita !== "");
     }
 </script>
 
