@@ -25,6 +25,9 @@
           <a class="dropdown-item" href="{{ url_for('modifica_profilo') }}">
             ✏️ Modifica profilo
           </a>
+          <a class="dropdown-item" href="{{ url_for('effettua_pagamento') }}">
+            💸 Effettua Pagamento
+          </a>
           <a class="dropdown-item" href="{{ url_for('richiesta_prestito') }}">
             📝 Richiedi Prestito
           </a>
@@ -111,6 +114,7 @@
           <table class="table table-striped m-0">
               <thead class="table-dark">
                   <tr>
+                      <th>Entrata/Uscita</th>
                       <th>Data</th>
                       <th>Importo</th>
                       <th>Descrizione</th>
@@ -124,27 +128,38 @@
                   {% set is_uscita = (t.conto_mittente_id == conto_selezionato.id) %}
 
                   <tr>
-                      <td>{{ t.data.strftime("%d/%m/%Y %H:%M") }}</td>
+                      <!-- 🔵 COLONNA ENTRATA / USCITA -->
+                    <td class="fw-bold {% if is_uscita %}text-danger{% else %}text-success{% endif %}">
+                        {% if is_uscita %}
+                             Uscita
+                        {% else %}
+                             Entrata
+                        {% endif %}
+                    </td>
 
-                      <!-- IMPORTO colorato e con + / − -->
-                      <td class="fw-bold {% if is_uscita %}text-danger{% else %}text-success{% endif %}">
-                          {% if is_uscita %}
-                              - € {{ "%.2f"|format(t.importo) }}
-                          {% else %}
-                              + € {{ "%.2f"|format(t.importo) }}
-                          {% endif %}
-                      </td>
+                    <!-- DATA -->
+                    <td>{{ t.data.strftime("%d/%m/%Y %H:%M") }}</td>
 
-                      <td>{{ t.descrizione }}</td>
+                    <!-- IMPORTO -->
+                    <td class="fw-bold {% if is_uscita %}text-danger{% else %}text-success{% endif %}">
+                        {% if is_uscita %}
+                            - € {{ "%.2f"|format(t.importo) }}
+                        {% else %}
+                            + € {{ "%.2f"|format(t.importo) }}
+                        {% endif %}
+                    </td>
 
-                      <!-- ETICHETTA TIPO: Entrata/Uscita -->
-                      <td>
-                          {% if is_uscita %}
-                              <span class="text-danger">Uscita</span>
-                          {% else %}
-                              <span class="text-success">Entrata</span>
-                          {% endif %}
-                      </td>
+                    <!-- DESCRIZIONE -->
+                    <td>{{ t.descrizione }}</td>
+
+                    <!-- 🏷️ COLONNA "TIPO" -->
+                    <td>
+                        {% if t.tipo %}
+                            <span class="badge bg-primary">{{ t.tipo.value }}</span>
+                        {% else %}
+                            <span class="text-muted">N/D</span>
+                        {% endif %}
+                    </td>
                   </tr>
 
                   {% endfor %}

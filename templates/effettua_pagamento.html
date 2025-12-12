@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-4" style="max-width: 600px;">
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="m-0">💸 Effettua un Pagamento</h5>
+        </div>
+
+        <div class="card-body">
+
+            {% include 'flash_messages.html' %}
+
+            <form method="POST" action="{{ url_for('effettua_pagamento') }}">
+
+                <!-- C/C DESTINATARIO -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Numero C/C</label>
+                    <input type="text" name="iban" class="form-control" maxlength="27" required>
+                    <div class="form-text">Per i bollettini postali (es. C/C n. 76245836 per Enel Energia).</div>
+                </div>
+                
+                <!-- IMPORTO -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Importo (€)</label>
+                    <input type="number" name="importo" class="form-control" step="0.01" min="0.01" required>
+                </div> 
+
+                <!-- DESCRIZIONE / CAUSALE -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Descrizione (es. inserisci il nome dell’ente da pagare.)</label>
+                    <textarea name="descrizione" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div class="d-flex justify-content-between gap-2">
+                    <!-- ANNULLA -->
+                    <a href="{{ url_for('pagina_privata') }}" class="btn btn-danger w-100 py-2">
+                        ✖ Annulla
+                    </a>
+
+                    <!-- CONFERMA -->
+                    <button type="submit" class="btn btn-success w-100 py-2">
+                        ➤ Effettua Pagamento
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

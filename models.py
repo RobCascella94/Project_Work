@@ -158,14 +158,14 @@ class Conto(Base):
         )
         return trans
     
-    def pagamento(self, esercente, importo, descrizione):
+    def pagamento(self, importo, descrizione):
         self.verifica_saldo(importo)
 
         trans = Transazione(
             importo=importo,
             tipo=TipoTransazione.PAGAMENTO,
             conto_mittente=self,
-            conto_destinatario=esercente,
+            conto_destinatario=None,
             descrizione=descrizione
         )
         return trans
