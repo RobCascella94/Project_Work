@@ -32,7 +32,6 @@ class Utente(Base):
         
     def genera_codice_titolare(self, session):
         while True:
-            print(f"[OK] sono in genera codice")
             numero = random.randint(1, 999999)
             codice = f"CT{numero:06d}"
             print(f"[OK] sono in genera codice: {codice}")

@@ -152,7 +152,7 @@
                     <!-- DESCRIZIONE -->
                     <td>{{ t.descrizione }}</td>
 
-                    <!-- 🏷️ COLONNA "TIPO" -->
+                    <!-- COLONNA "TIPO" -->
                     <td>
                         {% if t.tipo %}
                             <span class="badge bg-primary">{{ t.tipo.value }}</span>
@@ -193,11 +193,11 @@
         <p><strong>Nome:</strong> {{ utente.nome }}</p>
         <p><strong>Cognome:</strong> {{ utente.cognome }}</p>
 
-        {% if utente.lavoro %}
+        {% if utente.lavoro and utente.lavoro.nome_lavoro != "Disoccupato" %}
             <p><strong>Lavoro:</strong> {{ utente.lavoro.nome_lavoro }}</p>
             <p><strong>Stipendio:</strong> €{{ "%.2f"|format(utente.lavoro.stipendio_mensile) }}</p>
         {% else %}
-            <p><strong>Lavoro:</strong> Disoccupato</p>
+            <p><strong>Disoccupato</strong></p>
         {% endif %}
       </div>
 
