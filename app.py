@@ -12,7 +12,6 @@ from flasgger import Swagger
 
 app = Flask(__name__)
 swagger = Swagger(app)
-app.config["READ_ONLY_API"] = True  # MODALITÀ DEMO / SWAGGER
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 Base.metadata.create_all(bind=engine)
 

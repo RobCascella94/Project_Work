@@ -123,8 +123,6 @@
               </thead>
               <tbody>
                   {% for t in transazioni %}
-                  
-                  {# È USCITA SE IL CONTO SELEZIONATO È IL MITTENTE #}
                   {% set is_uscita = (t.conto_mittente_id == conto_selezionato.id) %}
 
                   <tr>
