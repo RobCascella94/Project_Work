@@ -1,6 +1,6 @@
 import re
 import traceback
-from flask import Flask, redirect, render_template, request, url_for, session, flash
+from flask import Flask, jsonify, redirect, render_template, request, url_for, session, flash
 from models import TipoTransazione, Utente, Lavoro, Conto, Transazione
 from database import Base, engine, SessionLocal
 from functools import wraps
@@ -8,9 +8,11 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 from decimal import Decimal
 from datetime import datetime, timedelta
-
+from flasgger import Swagger
 
 app = Flask(__name__)
+swagger = Swagger(app)
+app.config["READ_ONLY_API"] = True  # MODALITÀ DEMO / SWAGGER
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 Base.metadata.create_all(bind=engine)
 
@@ -392,6 +394,492 @@ def logout():
     session.clear() 
     flash("Logout effettuato con successo.", "success")
     return redirect(url_for('home'))
+
+
+#---- Documentazione Swagger/Flasgger ----
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    """
+    Login utente
+    ---
+    tags:
+      - Utenti
+    consumes:
+      - application/json
+    parameters:
+      - in: body
+        name: credenziali
+        required: true
+        schema:
+          type: object
+          required:
+            - codice_titolare
+            - pin
+          properties:
+            codice_titolare:
+              type: string
+              example: CT804494
+            pin:
+              type: string
+              example: "123456"
+    responses:
+      200:
+        description: Login riuscito
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Login OK
+      401:
+        description: Credenziali non valide
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Credenziali non valide
+    """
+    data = request.get_json(silent=True) or {}
+    db = SessionLocal()
+
+    try:
+        utente = db.query(Utente).filter(
+            Utente.codice_titolare == data.get("codice_titolare")
+        ).first()
+
+        if utente and utente.verifica_pin(data.get("pin")):
+            return jsonify({"message": "Login OK"}), 200
+
+        return jsonify({"error": "Credenziali non valide"}), 401
+
+    finally:
+        db.close()
+
+
+@app.route('/api/registrazione', methods=['POST'])
+def api_registrazione():
+    """
+    Registrazione di un nuovo utente
+    ---
+    tags:
+      - Utenti
+    consumes:
+      - application/json
+    parameters:
+      - in: body
+        name: dati_utente
+        required: true
+        schema:
+          type: object
+          required:
+            - nome
+            - cognome
+            - codice_fiscale
+            - lavoro
+            - pin1
+            - pin2
+          properties:
+            nome:
+              type: string
+              example: Mario
+            cognome:
+              type: string
+              example: Rossi
+            codice_fiscale:
+              type: string
+              example: RSSMRA80A01H501U
+            lavoro:
+              type: string
+              example: Impiegato
+            pin1:
+              type: string
+              example: "123456"
+            pin2:
+              type: string
+              example: "123456"
+    responses:
+      201:
+        description: Registrazione completata con successo
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Registrazione completata
+            codice_titolare:
+              type: string
+              example: CT804494
+      400:
+        description: Dati non validi o errore di registrazione
+    """
+    data = request.get_json(silent=True) or {}
+    db = SessionLocal()
+
+    try:
+        nome = data.get("nome")
+        cognome = data.get("cognome")
+        codice_fiscale = data.get("codice_fiscale")
+        lavoro = data.get("lavoro")
+        pin1 = data.get("pin1")
+        pin2 = data.get("pin2")
+
+        # --- Controllo campi ---
+        if not all([nome, cognome, codice_fiscale, lavoro, pin1, pin2]):
+            return jsonify({"error": "Tutti i campi sono obbligatori"}), 400
+
+        if pin1 != pin2:
+            return jsonify({"error": "I PIN non coincidono"}), 400
+
+        # --- Verifica utente esistente ---
+        if db.query(Utente).filter_by(codice_fiscale=codice_fiscale).first():
+            return jsonify({"error": "Utente già registrato"}), 400
+
+        # --- Creazione utente ---
+        nuovo_utente = Utente(
+            nome,
+            cognome,
+            codice_fiscale,
+            lavoro,
+            db
+        )
+        nuovo_utente.crea_pin(pin1)
+        db.add(nuovo_utente)
+        db.flush()  # assegna ID e codice_titolare
+
+        # --- Creazione conto ---
+        nuovo_conto = Conto(nuovo_utente.id, db)
+        db.add(nuovo_conto)
+        db.flush()
+
+        # --- Bonus di benvenuto ---
+        trans = Transazione(
+            importo=Decimal("100.00"),
+            descrizione="Bonus benvenuto nuovo conto",
+            tipo=TipoTransazione.BONUS,
+            conto_destinatario_id=nuovo_conto.id
+        )
+        db.add(trans)
+
+        # Copia dati PRIMA del rollback
+        response = {
+            "message": "Registrazione completata",
+            "codice_titolare": nuovo_utente.codice_titolare
+        }
+
+        # --- Simulazione: non persistiamo realmente ---
+        db.rollback()
+
+        return jsonify(response), 201
+
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 400
+
+    finally:
+        db.close()
+
+
+
+
+@app.route('/api/conti/<int:conto_id>/saldo', methods=['GET'])
+def api_saldo(conto_id):
+    """
+    Recupera il saldo corrente del conto
+    ---
+    tags:
+      - Conti
+    parameters:
+      - in: path
+        name: conto_id
+        type: integer
+        required: true
+        example: 3
+      - in: query
+        name: utente_id
+        type: integer
+        required: true
+        description: ID utente (simulazione autenticazione API)
+        example: 2
+    responses:
+      200:
+        description: Saldo corrente del conto
+        schema:
+          type: object
+          properties:
+            iban:
+              type: string
+              example: IT123456000001
+            saldo_corrente:
+              type: number
+              example: 150
+      404:
+        description: Conto non trovato
+      400:
+        description: Utente non specificato
+    """
+    db = SessionLocal()
+    try:
+        utente_id = request.args.get("utente_id", type=int)
+        if not utente_id:
+            return jsonify({"error": "Utente non specificato"}), 400
+
+        conto = db.query(Conto).filter_by(
+            id=conto_id,
+            utente_id=utente_id
+        ).first()
+
+        if not conto:
+            return jsonify({"error": "Conto non trovato"}), 404
+
+        return jsonify({
+            "iban": conto.iban,
+            "saldo_corrente": float(conto.saldo_corrente)
+        }), 200
+
+    finally:
+        db.close()
+
+
+
+
+
+@app.route('/api/conti/<int:conto_id>/transazioni', methods=['GET'])
+def api_transazioni(conto_id):
+    """
+    Recupera le transazioni di un conto
+    ---
+    tags:
+      - Conti
+    parameters:
+      - in: path
+        name: conto_id
+        type: integer
+        required: true
+        description: ID del conto
+        example: 3
+      - in: query
+        name: utente_id
+        type: integer
+        required: true
+        description: ID utente (simulazione autenticazione API)
+        example: 2
+    responses:
+      200:
+        description: Lista delle transazioni
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 1
+              importo:
+                type: number
+                example: 100.50
+              tipo:
+                type: string
+                example: Bonifico
+              descrizione:
+                type: string
+                example: Pagamento fattura
+              data:
+                type: string
+                example: "2025-12-15T13:30:00"
+              conto_mittente_id:
+                type: integer
+                example: 1
+              conto_destinatario_id:
+                type: integer
+                example: 2
+      400:
+        description: Utente non specificato
+      404:
+        description: Conto non trovato
+    """
+    db = SessionLocal()
+    try:
+        utente_id = request.args.get("utente_id", type=int)
+        if not utente_id:
+            return jsonify({"error": "Utente non specificato"}), 400
+
+        conto = db.query(Conto).filter_by(
+            id=conto_id,
+            utente_id=utente_id
+        ).first()
+
+        if not conto:
+            return jsonify({"error": "Conto non trovato"}), 404
+
+        transazioni = (
+            db.query(Transazione)
+            .filter(
+                (Transazione.conto_mittente_id == conto.id) |
+                (Transazione.conto_destinatario_id == conto.id)
+            )
+            .order_by(Transazione.data.desc())
+            .all()
+        )
+
+        return jsonify([
+            {
+                "id": t.id,
+                "importo": float(t.importo),
+                "tipo": t.tipo.value,
+                "descrizione": t.descrizione,
+                "data": t.data.isoformat(),
+                "conto_mittente_id": t.conto_mittente_id,
+                "conto_destinatario_id": t.conto_destinatario_id
+            }
+            for t in transazioni
+        ]), 200
+
+    finally:
+        db.close()
+
+
+
+@app.route('/api/conti/<int:conto_id>/bonifico', methods=['POST'])
+def api_bonifico(conto_id):
+    """
+    Effettua un bonifico da un conto a un altro
+    ---
+    tags:
+      - Transazioni
+    consumes:
+      - application/json
+    parameters:
+      - in: path
+        name: conto_id
+        type: integer
+        required: true
+        description: ID del conto mittente
+        example: 1
+      - in: body
+        name: bonifico
+        required: true
+        schema:
+          type: object
+          required:
+            - utente_id
+            - iban_destinatario
+            - importo
+          properties:
+            utente_id:
+              type: integer
+              example: 1
+            iban_destinatario:
+              type: string
+              example: IT123456165276
+            importo:
+              type: number
+              example: 50.00
+            descrizione:
+              type: string
+              example: Regalo di compleanno
+    responses:
+      200:
+        description: Bonifico effettuato con successo
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Bonifico effettuato con successo
+            transazione_id:
+              type: integer
+              example: 10
+            transazione_importo:
+              type: number
+              example: 50.00
+            transazione_tipo:
+              type: string
+              example: Bonifico
+            transazione_descrizione:
+              type: string
+              example: Regalo di compleanno
+            transazione_data:
+              type: string
+              example: "2025-12-15T13:30:00"
+            transazione_conto_mittente_id:
+              type: integer
+              example: 1
+            transazione_conto_destinatario_id:
+              type: integer
+              example: 2
+      400:
+        description: Errore input o saldo insufficiente
+      404:
+        description: Conto mittente o destinatario non trovato
+    """
+    data = request.get_json()
+    db = SessionLocal()
+
+    try:
+        # --- Validazione input ---
+        utente_id = data.get("utente_id")
+        iban_destinatario = data.get("iban_destinatario", "").strip()
+        importo = data.get("importo")
+        descrizione = data.get("descrizione", "")
+
+        if not all([utente_id, iban_destinatario, importo]):
+            return jsonify({"error": "Dati mancanti"}), 400
+
+        # --- Conto mittente ---
+        conto_mittente = db.query(Conto).filter_by(
+            id=conto_id,
+            utente_id=utente_id
+        ).first()
+        if not conto_mittente:
+            return jsonify({"error": "Conto mittente non trovato"}), 404
+
+        # --- Conto destinatario ---
+        conto_destinatario = db.query(Conto).filter_by(
+            iban=iban_destinatario
+        ).first()
+        if not conto_destinatario:
+            return jsonify({"error": "IBAN destinatario non valido"}), 404
+
+        # --- Creazione bonifico ---
+        trans = conto_mittente.bonifico(
+            conto_destinatario,
+            Decimal(str(importo)),
+            descrizione
+        )
+
+        db.add(trans)
+        db.flush() 
+
+        # --- Copia dati PRIMA del rollback ---
+        response = {
+            "message": "Bonifico effettuato con successo",
+            "transazione_id": trans.id,
+            "transazione_importo": float(trans.importo),
+            "transazione_tipo": trans.tipo.value,
+            "transazione_descrizione": trans.descrizione,
+            "transazione_data": trans.data.isoformat(),
+            "transazione_conto_mittente_id": trans.conto_mittente_id,
+            "transazione_conto_destinatario_id": trans.conto_destinatario_id
+        }
+
+        # --- Simulazione: non persistiamo realmente ---
+        db.rollback()
+
+        return jsonify(response), 200
+
+    except ValueError as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 400
+
+    except Exception:
+        db.rollback()
+        return jsonify({"error": "Errore durante il bonifico"}), 400
+
+    finally:
+        db.close()
+
 
 
 
