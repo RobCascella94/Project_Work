@@ -546,6 +546,12 @@ th{
 .container mt-2{
     top: 50px !important;    
 }
+
+.no-click {
+    pointer-events: none;
+    opacity: 0.6; 
+}
+
 #profiloModal .modal-content {
     
     border: none;
